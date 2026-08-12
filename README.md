@@ -1,5 +1,7 @@
 # never-worse-backup
 
+[![test](https://github.com/justin-rhee/never-worse-backup/actions/workflows/test.yml/badge.svg)](https://github.com/justin-rhee/never-worse-backup/actions/workflows/test.yml)
+
 An automatic git backup can lose work as easily as it saves it. Mine committed another session's half-finished file under my name, then did it again a week later. It can go wrong in a handful of ways: committing over someone who's mid-edit, sweeping up a draft that's still being written, carrying along a file you deleted by accident, or pushing private notes to the wrong place. So I built one that stops the moment it might do any of that, and tells you why. It's about 50 lines of bash and git.
 
 Here's what that looks like:

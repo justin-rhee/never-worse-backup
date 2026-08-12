@@ -1,0 +1,33 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Report both platforms even when one fails, so a macOS-only or
+      # Linux-only regression is visible in the same run.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      # The tool itself runs `git commit`, and the runners have no git
+      # identity configured. git can sometimes infer one from the hostname,
+      # but on a runner that guess is invalid, so the commit fails and the
+      # suite reports 6 failures. Configuring an identity here keeps the
+      # test environment honest without touching the tool.
+      - name: Configure a git identity for the suite
+        run: |
+          git config --global user.name "ci"
+          git config --global user.email "ci@example.invalid"
+
+      # The suite ends on `[ "$FAIL" -eq 0 ]`, so a failing assertion exits
+      # non-zero and fails this step.
+      - name: Run the offline suite
+        run: bash tests/test-never-worse-backup.sh
