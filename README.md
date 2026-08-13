@@ -34,12 +34,12 @@ backup: no BACKUP_EXPECTED_REMOTE set, committed locally, push skipped
 
 The checks, in the order they run:
 
-- If another process is partway through staging changes, it backs off and leaves them for next time.
-- If a file was touched in the last ten minutes, it treats that as someone still working, names it, and skips it.
-- It never carries a deletion. A file you removed by mistake is the one thing a backup should not help you lose.
-- It names everything it saves, so a wrong grab is visible immediately rather than days later.
-- It only pushes if you opt in and say which remote is allowed, and it reads the outgoing changes for secrets first.
-- Every path exits successfully, so it can never break whatever called it.
+- if another process is partway through staging changes, it backs off and leaves them for next time
+- if a file was touched in the last ten minutes, it treats that as someone still working, names it, and skips it
+- it never carries a deletion, since a file you removed by mistake is the one thing a backup should not help you lose
+- it names everything it saves, so a wrong grab is visible immediately rather than days later
+- it only pushes if you opt in and say which remote is allowed, and it reads the outgoing changes for secrets first
+- every path exits successfully, so it can never break whatever called it
 
 About 50 lines of shell and git.
 
@@ -62,9 +62,11 @@ Leaving `BACKUP_EXPECTED_REMOTE` unset is the safe default and a fine way to sta
 
 ## What it won't do
 
-- It isn't a replacement for real backups, or for committing your own work. It's a net under uncommitted files, not a way of working.
-- It won't force-push, resolve conflicts, or carry deletions across. Given any doubt it commits locally and stops.
-- Its guard against interrupting someone is that the file was touched recently, not that it knows whose edit it is. Ten minutes is a guess about human behaviour, not a fact about ownership.
+It isn't a replacement for real backups, or for committing your own work. It's a net under uncommitted files, not a way of working.
+
+It won't force-push, resolve conflicts, or carry deletions across. Given any doubt it commits locally and stops.
+
+Its guard against interrupting someone is that the file was touched recently, not that it knows whose edit it is. Ten minutes is a guess about human behaviour, not a fact about ownership.
 
 ## How I tested it
 
