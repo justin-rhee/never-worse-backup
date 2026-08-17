@@ -2,17 +2,13 @@
 
 [![test](https://github.com/justin-rhee/never-worse-backup/actions/workflows/test.yml/badge.svg)](https://github.com/justin-rhee/never-worse-backup/actions/workflows/test.yml)
 
-A git checkpoint script that refuses to run when it might save the wrong thing.
+My backup script committed another agent session's half-finished work under my name, twice in two weeks, and both times it was doing exactly what I asked it to do. Find changed files, commit them. With parallel sessions on one tree it couldn't tell my finished work from something mid-keystroke.
 
-## Why I built it
+So I wrote one that refuses to run when it might save the wrong thing, and says why.
 
-My backup script committed someone else's half-finished work under my name. A week later it did it again.
+## Use it if
 
-Both times it did exactly what I had asked it to do: find changed files, commit them. It had no way to tell work I had finished from work somebody was still in the middle of typing.
-
-If you automate saving your work, this is the shape of it. The thing meant to protect you is running unattended, on files you haven't looked at, at a moment you didn't choose. Once I started listing the ways that can go wrong, the list got uncomfortable. It can commit over someone mid-edit. It can sweep up a draft that is still being written. It can carry along a file you deleted by mistake, which is the one case where a backup helps you lose something. It can push private notes somewhere public.
-
-So I wrote one that stops the moment any of those is possible, and says which one.
+You've got files you haven't committed yet, notes, plans, generated docs, and you want them saved automatically without the backup ever being the thing that loses your work. It runs from a hook, a scheduled job, or by hand.
 
 ## How it works
 
