@@ -47,7 +47,8 @@ you explicitly allow it, and it scans what it's about to send for common secret
 patterns, keeping the commit local if it finds one. Every failure just stops and
 leaves your work committed locally.
 
-The worst case degrades to "committed locally, didn't push, told you why," never
-"published something you didn't mean to." The secret scan is a backstop, not a
+If anything goes wrong here you end up with a local commit and a message telling
+you why it stopped, which is a long way from publishing something you never meant
+to share. The secret scan is a backstop, not a
 guarantee (the security notes say so), the real protection is the opt-in and the
 pinned destination.
