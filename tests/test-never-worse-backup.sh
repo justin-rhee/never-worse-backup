@@ -17,6 +17,12 @@ g() { git -C "$1" -c user.name=t -c user.email=t@e.x "${@:2}"; }
 mkrepo() { # mkrepo <dir>, git repo (hooks disabled) with a committed docs/seed.md
   local d=$1; mkdir -p "$d/docs"; git init -q -b main "$d"
   git -C "$d" config core.hooksPath "$NOHOOKS"
+  # The TOOL commits into this repo itself, without going through g(), so the repo
+  # needs its own identity. Git only falls back to a name derived from the passwd
+  # record, and a CI runner's is empty, which makes the commit fatal rather than
+  # merely anonymous. That failed 6 of 10 tests on ubuntu while macOS passed.
+  git -C "$d" config user.name "never-worse-backup tests"
+  git -C "$d" config user.email "tests@example.invalid"
   printf 'seed\n' > "$d/docs/seed.md"; g "$d" add -A; g "$d" commit -qm init
 }
 old() { touch -t 202601010000 "$1"; }   # mtime well older than the 10-min live window
