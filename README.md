@@ -58,11 +58,12 @@ Leaving `BACKUP_EXPECTED_REMOTE` unset is the safe default and a fine way to sta
 
 ## What it won't do
 
-It isn't a replacement for real backups, or for committing your own work. It's a net under uncommitted files, not a way of working.
-
-It won't force-push, resolve conflicts, or carry deletions across. Given any doubt it commits locally and stops.
-
-Its guard against interrupting someone is that the file was touched recently, not that it knows whose edit it is. Ten minutes is a guess about human behaviour, not a fact about ownership.
+- replace real backups, or replace committing your own work, since it's a net under
+  uncommitted files rather than a way of working
+- force-push, resolve conflicts, or carry deletions across, and given any doubt it
+  commits locally and stops
+- know whose edit it is, only that a file was touched recently, so ten minutes is a
+  guess about human behaviour rather than a fact about ownership
 
 ## How I tested it
 
