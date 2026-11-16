@@ -1,18 +1,8 @@
 # never-worse-backup
 
-One small script for uncommitted work: **decide whether saving is safe right now**, **commit without ever carrying a deletion**, and **push only to a remote you named, after scanning the outgoing changes for secrets**. About 50 lines of shell and git, and every path exits successfully so it can never break whatever called it.
+[![tests](https://github.com/justin-rhee/never-worse-backup/actions/workflows/test.yml/badge.svg)](https://github.com/justin-rhee/never-worse-backup/actions/workflows/test.yml) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) ![shell + git](https://img.shields.io/badge/shell-%2B%20git-blue.svg) ![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen.svg)
 
-It exists because my backup script committed another agent session's half-finished work under my name, twice in two weeks, and both times it was doing exactly what I asked it to do: find changed files, commit them. With parallel sessions on one tree it could not tell my finished work from something mid-keystroke. So I wrote one that refuses to run when it might save the wrong thing, and says why.
-
-## Use it if
-
-- you have uncommitted files you want saved automatically without the backup ever being the thing that loses your work
-- parallel sessions or jobs share one tree
-- you want it to run from a hook, a scheduled job, or by hand
-
-## How it works
-
-It runs, decides whether saving is safe right now, and either saves or explains why not.
+Saves your uncommitted work to git on a schedule, without ever grabbing someone else's half-typed changes or committing a deletion.
 
 ```console
 # someone is still typing (file touched < 10 min ago)
@@ -28,17 +18,17 @@ backup: committed locally
 backup: no BACKUP_EXPECTED_REMOTE set, committed locally, push skipped
 ```
 
-The checks, in the order they run:
+My backup script committed another agent session's half-finished work under my name, twice in two weeks. Both times it did exactly what I asked: find changed files, commit them. With parallel sessions on one folder, it couldn't tell finished work from something mid-keystroke.
 
-- if another process is partway through staging changes, it backs off and leaves them for next time
-- if a file was touched in the last ten minutes, it treats that as someone still working, names it, and skips it
-- it never carries a deletion, since a file you removed by mistake is the one thing a backup should not help you lose
-- it names everything it saves, so a wrong grab is visible immediately rather than days later
-- it only pushes if you opt in and say which remote is allowed, and it reads the outgoing changes for secrets first
+## Use it if
+
+- you want uncommitted files saved automatically, without the backup ever being what loses your work
+- parallel sessions or jobs share one folder
+- you want it to run from a hook, a scheduled job or by hand
 
 ## Install
 
-Nothing to install. Run it from a hook, a scheduled job, or by hand:
+Nothing to install: about 50 lines of shell and git, and every path exits successfully, so it can never break whatever called it.
 
 ```
 BACKUP_REPO=~/notes BACKUP_PATH=drafts/ bash never-worse-backup.sh
@@ -48,33 +38,38 @@ BACKUP_REPO=~/notes BACKUP_PATH=drafts/ bash never-worse-backup.sh
 |---|---|---|
 | `BACKUP_REPO` | current folder | the repo to back up |
 | `BACKUP_PATH` | everything | which folder inside it to back up, like `docs/` |
-| `BACKUP_EXPECTED_REMOTE` | unset | text the `origin` URL has to contain before it will push. Leave it unset and it only ever saves locally. |
-| `BACKUP_ALLOW_PUBLIC` | `0` | set to `1` to allow pushing to a repo that is not private |
+| `BACKUP_EXPECTED_REMOTE` | unset | text the `origin` URL must contain before it pushes; unset means it only saves locally |
+| `BACKUP_ALLOW_PUBLIC` | `0` | set to `1` to allow pushing to a repo that isn't private |
 
-Leaving `BACKUP_EXPECTED_REMOTE` unset is the safe default and a fine way to start: it commits locally and never pushes anywhere until you tell it exactly where it is allowed to.
+## How it works
+
+1. if another process is partway through staging changes, it backs off until next time
+2. a file touched in the last ten minutes counts as someone still working, so it names it and skips it
+3. it commits what's left, never carrying a deletion, and names everything it saved
+4. it pushes only if you opted in and named the allowed remote, after scanning the outgoing changes for secrets
 
 ## What it won't do
 
-- replace real backups, or replace committing your own work, since it's a net under uncommitted files rather than a way of working
-- force-push, resolve conflicts, or carry deletions across, and given any doubt it commits locally and stops
-- know whose edit it is, only that a file was touched recently, so ten minutes is a guess about human behaviour rather than a fact about ownership
-
-## Platforms
-
-macOS and Linux today, Windows on the way.
+- replace real backups or committing your own work, since it's a net under uncommitted files
+- force-push, resolve conflicts or carry deletions, and given any doubt it commits locally and stops
+- know whose edit it is, only that a file was touched recently, so ten minutes is a guess about people rather than a fact about ownership
+- run on Windows yet
 
 ## How I tested it
 
-The suite runs offline, no accounts or keys:
-
-```
-bash tests/test-never-worse-backup.sh
-```
-
-10 cases, one for each guard above. The two I most wanted proof of: that a pinned, matching remote does actually push, and that a secret in the outgoing changes gets committed locally and never leaves the machine. The reasoning behind each guard is in [docs/ADR.md](docs/ADR.md).
+- 10 offline cases, one per guard, no accounts or keys: `bash tests/test-never-worse-backup.sh`
+- a pinned, matching remote really does push
+- a secret in the outgoing changes gets committed locally and never leaves the machine; the reasoning behind each guard is in [docs/ADR.md](docs/ADR.md)
 
 ## License
 
 MIT. See [LICENSE](LICENSE). No warranty. Security notes and how to report a problem: [SECURITY.md](SECURITY.md).
 
-This little tool is one of a handful I pulled out of my own day-to-day agent setup. I use them all myself, so when something breaks I usually notice fast. If you spot anything off, open an issue. I read every one. More tools on my [GitHub profile](https://github.com/justin-rhee).
+<!-- related:start -->
+## Related
+
+- [touchset-gate](https://github.com/justin-rhee/touchset-gate): flags any file an agent changed outside its task
+- [take-once](https://github.com/justin-rhee/take-once): lets several coding agents share one task list without two of them grabbing the same task
+
+Part of a small set of tools I pulled out of my own agent harness. I use them myself and read every issue. More on my [GitHub profile](https://github.com/justin-rhee).
+<!-- related:end -->
