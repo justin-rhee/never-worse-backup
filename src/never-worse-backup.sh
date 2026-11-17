@@ -76,11 +76,22 @@ if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
     echo "backup: repo visibility=$vis and BACKUP_ALLOW_PUBLIC!=1, push skipped (refusing to back up private drafts to a public remote)"; exit 0
   fi
 fi
-# Secret scan on the outgoing diff. `grep -q` on a pipe is SAFE here precisely because
-# there is NO `set -o pipefail`: grep's exit (0 = a secret was found) is authoritative,
-# and a match is the only thing that fires the branch, the classic pipefail+SIGPIPE
-# false-miss cannot occur without pipefail.
-if git -C "$R" diff origin/main..HEAD | grep -qE '(sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pos]_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.)'; then
+# Secret scan on everything about to leave the machine. With an origin/main that is
+# the diff against it. On a FIRST push there is no origin/main, so scan the whole of
+# HEAD (a diff from the empty tree), otherwise git errors, grep sees nothing, and the
+# scan silently passes. FAIL CLOSED: if the diff itself errors, skip the push. The
+# diff goes to a variable first so its exit status is checked, not swallowed by a pipe.
+# `grep -q` on a here-string is safe: grep's exit (0 = a secret was found) is
+# authoritative, and a match is the only thing that fires the branch.
+if git -C "$R" rev-parse -q --verify refs/remotes/origin/main >/dev/null 2>&1; then
+  base=origin/main
+else
+  base=$(git -C "$R" hash-object -t tree /dev/null 2>/dev/null) || base=""
+fi
+if [ -z "$base" ] || ! outgoing=$(git -C "$R" diff "$base" HEAD 2>/dev/null); then
+  echo "backup: could not scan outgoing changes for secrets, push skipped (committed locally)"; exit 0
+fi
+if grep -qE '(sk-[A-Za-z0-9_-]{16,}|AKIA[0-9A-Z]{16}|gh[pos]_[A-Za-z0-9]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}\.)' <<<"$outgoing"; then
   echo "backup: possible secret in outgoing diff, push skipped (committed locally)"; exit 0
 fi
 git -C "$R" push origin main >/dev/null 2>&1 && echo "backup: pushed to origin" || echo "backup: push failed, committed locally"

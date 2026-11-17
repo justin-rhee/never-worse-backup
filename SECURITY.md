@@ -20,8 +20,10 @@ off and you own the consequences.
 ## Validation status
 
 The standalone suite `tests/test-never-worse-backup.sh` runs offline (bash + git +
-coreutils, no network, no keys) and passes 10/10, including the remote-pin,
-non-private-refusal, and secret-in-diff paths. Run it before relying on the tool:
+coreutils, no network, no keys) and passes 13/13, including the remote-pin,
+secret-in-diff, first-push secret scan, and fail-closed scan paths. It does not
+cover the GitHub visibility check (needs `gh` and a network) or non-Linux
+platforms. Run it before relying on the tool:
 
     bash tests/test-never-worse-backup.sh
 

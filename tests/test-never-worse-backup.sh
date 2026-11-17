@@ -98,5 +98,42 @@ local_c=$(g "$d" log --oneline | grep -c 'checkpoint uncommitted' || true)
 { [ "$rc" = 0 ] && [ "${pushed:-0}" = 0 ] && [ "${local_c:-0}" -ge 1 ] && grep -q 'possible secret' <<<"$out"; } \
   && ok "secret: committed locally, push skipped" || bad "secret path (rc=$rc pushed=$pushed local=$local_c): $out"
 
+echo "== 11. FIRST push (remote has no main yet) with a secret -> NOT pushed =="
+bare3="$WORK/origin3.git"; git init -q --bare -b main "$bare3"
+d="$WORK/first"; mkrepo "$d"; g "$d" remote add origin "$bare3"   # never pushed: no origin/main
+ghtok="ghp_$(printf '%s%s' 'abcdefghijklmnopqrstuvwxyz' '0123456789')"   # ghp_ + 36 chars
+printf 'token=%s\n' "$ghtok" > "$d/docs/leak.md"; old "$d/docs/leak.md"
+out=$(BACKUP_REPO="$d" BACKUP_PATH=docs BACKUP_EXPECTED_REMOTE="origin3.git" BACKUP_ALLOW_PUBLIC=1 bash "$NWB" 2>&1); rc=$?
+pushed=$(git -C "$bare3" branch --list main | grep -c main || true)
+{ [ "$rc" = 0 ] && [ "${pushed:-0}" = 0 ] && grep -q 'possible secret' <<<"$out"; } \
+  && ok "first push: secret caught, nothing pushed" || bad "first push secret (rc=$rc pushed=$pushed): $out"
+
+echo "== 12. FIRST push, clean content -> still pushes =="
+bare4="$WORK/origin4.git"; git init -q --bare -b main "$bare4"
+d="$WORK/firstclean"; mkrepo "$d"; g "$d" remote add origin "$bare4"
+printf 'fine\n' > "$d/docs/ok.md"; old "$d/docs/ok.md"
+out=$(BACKUP_REPO="$d" BACKUP_PATH=docs BACKUP_EXPECTED_REMOTE="origin4.git" BACKUP_ALLOW_PUBLIC=1 bash "$NWB" 2>&1); rc=$?
+pushed=$(git -C "$bare4" branch --list main | grep -c main || true)
+{ [ "$rc" = 0 ] && [ "${pushed:-0}" = 1 ] && grep -q 'pushed to origin' <<<"$out"; } \
+  && ok "first push, clean: pushes" || bad "first push clean (rc=$rc pushed=$pushed): $out"
+
+echo "== 13. scan command errors -> fail closed, NOT pushed =="
+bare5="$WORK/origin5.git"; git init -q --bare -b main "$bare5"
+d="$WORK/failclosed"; mkrepo "$d"; g "$d" remote add origin "$bare5"
+printf 'fine\n' > "$d/docs/ok.md"; old "$d/docs/ok.md"
+SHIM="$WORK/shim"; mkdir -p "$SHIM"; REALGIT=$(command -v git)
+# git wrapper that fails only the outgoing-scan diff (a diff against HEAD, not --cached)
+{
+  echo '#!/usr/bin/env bash'
+  echo 'case " $* " in *" diff "*) case " $* " in *" --cached "*) ;; *" HEAD "*) exit 128 ;; esac ;; esac'
+  echo "exec \"$REALGIT\" \"\$@\""
+} > "$SHIM/git"
+chmod +x "$SHIM/git"
+out=$(PATH="$SHIM:$PATH" BACKUP_REPO="$d" BACKUP_PATH=docs BACKUP_EXPECTED_REMOTE="origin5.git" BACKUP_ALLOW_PUBLIC=1 bash "$NWB" 2>&1); rc=$?
+pushed=$(git -C "$bare5" branch --list main | grep -c main || true)
+local_c=$(g "$d" log --oneline | grep -c 'checkpoint uncommitted' || true)
+{ [ "$rc" = 0 ] && [ "${pushed:-0}" = 0 ] && [ "${local_c:-0}" -ge 1 ] && grep -q 'could not scan' <<<"$out"; } \
+  && ok "scan error: fail closed, committed locally" || bad "fail closed (rc=$rc pushed=$pushed local=$local_c): $out"
+
 echo "test-never-worse-backup: $PASS passed, $FAIL failed"
 [ "$FAIL" -eq 0 ]

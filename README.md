@@ -57,9 +57,9 @@ BACKUP_REPO=~/notes BACKUP_PATH=drafts/ bash never-worse-backup.sh
 
 ## How I tested it
 
-- 10 offline cases, one per guard, no accounts or keys: `bash tests/test-never-worse-backup.sh`
+- 13 offline cases, covering every guard, no accounts or keys: `bash tests/test-never-worse-backup.sh`
 - a pinned, matching remote really does push
-- a secret in the outgoing changes gets committed locally and never leaves the machine; the reasoning behind each guard is in [docs/ADR.md](docs/ADR.md)
+- a secret in the outgoing changes, including on the very first push to a new remote, gets committed locally and never leaves the machine; if the scan itself fails, nothing is pushed; the reasoning behind each guard is in [docs/ADR.md](docs/ADR.md)
 
 ## License
 
